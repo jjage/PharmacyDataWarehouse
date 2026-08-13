@@ -1,4 +1,3 @@
-[Readme First.md](https://github.com/user-attachments/files/30997494/Readme.First.md)
 Pharmacy Claims Data Warehouse
 
 
