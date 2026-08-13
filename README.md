@@ -1,4 +1,4 @@
-#Pharmacy Claims Data Warehouse
+# Pharmacy Claims Data Warehouse
 
 This database was created with AI (Claude 4.7 Opus) and is designed to store pharmaceutical claims for a payer (HMO, Self-Insured Employer, Etc).   The design facilitates robust reporting and claims analysis to help the user manage cost, utilization, and member health.
 
