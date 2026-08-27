@@ -166,5 +166,5 @@ What the test suite confirmed: the SCD2 exclusion correctly rejects overlapping 
 
 One thing worth naming: several of these structures — `MEMBER\\\_MONTH`, `THERAPY\\\_EPISODE`, `ACCUMULATOR\\\_SNAPSHOT`, and the snapshot columns on `CLAIM\\\_COST` — are now empty vessels. They only earn their keep once the stateful claims generator populates them, and the generator has to emit that state as it runs. So this migration and the generator design are coupled: the next step is building the generator to write phase, balances, tier, and the derived facts as it produces each claim.
 
-The Pharmaceutical Claims Temporal Update DDL is here: \[Pharmaceutical Claims Temporal Update\](pharma\_claims\_temporal\_upgrade\_run\_2nd.sql)
+The Pharmaceutical Claims Temporal Update DDL is here: [Pharmaceutical Claims Temporal Update](pharma_claims_temporal_upgrade_run_2nd.sql)
 
