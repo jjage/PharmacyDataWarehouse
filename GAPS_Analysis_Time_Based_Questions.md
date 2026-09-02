@@ -44,11 +44,11 @@ Good question to ask before the data exists — temporal design flaws are cheap 
 
 - **Monthly `ACCUMULATOR\\\_SNAPSHOT`** — balances per member per period-end, so burndown curves don't re-sum contribution history.
 
-\# Prompt
+### Prompt ###
 
 Can you summarize these findings?
 
-\# Claude
+### Claude ###
 
 **What's genuinely hard**
 
@@ -68,11 +68,11 @@ Three are structural but high-payoff: a `MEMBER\\\_MONTH` fact (the single bigge
 
 Want this shaped into something else — a design memo, a follow-up post, or a prioritized backlog with effort estimates?
 
-\# Prompt:
+### Prompt: ###
 
 Can you implement the fixes and if so, what do you need from me?
 
-\# Claude:
+### Claude: ###
 
 Yes — with one important split baked into how I'd do it.
 
@@ -106,7 +106,7 @@ One thing I can start on immediately while you find the file: `DATE\\\_DIM` is f
 
 ### Prompt: ###
 
-Note: Original DDL created from the Flipped-Interaction session uploaded to Claude at the prompt
+**Note: ** Original DDL created from the Flipped-Interaction session uploaded to Claude at the prompt
 
 ### Claude: ###
 
