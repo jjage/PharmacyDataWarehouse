@@ -88,7 +88,7 @@ Here's why the sequence matters: the bitemporal columns and the adjudication sna
 
 **What I need from you**
 
-1. **The actual DDL file** — the real s`ql`. This is the one thing I genuinely need. I've been reconstructing column names and types from session summaries and search fragments, and the older tool results with the verbatim definitions were cleared from context. That's fine for discussion, but rewriting `CREATE TABLE`s to exact spec needs the source, or I'll be guessing at column names. Upload it and I'm on solid ground.
+1. **The actual DDL file** — the real SQL. This is the one thing I genuinely need. I've been reconstructing column names and types from session summaries and search fragments, and the older tool results with the verbatim definitions were cleared from context. That's fine for discussion, but rewriting `CREATE TABLE`s to exact spec needs the source, or I'll be guessing at column names. Upload it and I'm on solid ground.
 
 2. **Confirm it's still greenfield** — that the DDL hasn't been run into a database you've already loaded beyond the two seed tables. If it's truly unloaded, I rewrite the `CREATE`s; if you've got a live DB, I'll write migration `ALTER`s instead (doable, just more careful).
 
