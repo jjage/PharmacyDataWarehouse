@@ -2,7 +2,7 @@
 
 What time-based questions would be difficult to answer with my current schema? How could we modify it to better support temporal analysis?
 
-**Claude:**
+### Claude: ###
 
 Good question to ask before the data exists — temporal design flaws are cheap to fix now and expensive after you've loaded a few million claims.
 
@@ -104,11 +104,11 @@ Here's why the sequence matters: the bitemporal columns and the adjudication sna
 
 One thing I can start on immediately while you find the file: `DATE\\\_DIM` is fully standalone and depends on none of the above except the date span. Say the word and I'll write it now, then fold in the rest once the DDL's in front of me. Want me to kick that off, or hold until you've uploaded the schema so it's one coherent pass?
 
-\# Prompt
+### Prompt: ###
 
 Note: Original DDL created from the Flipped-Interaction session uploaded to Claude at the prompt
 
-\# Claude
+### Claude: ###
 
 Got it — reading the DDL now so I'm working from the real thing rather than reconstructed columns.
 
