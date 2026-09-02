@@ -1,8 +1,8 @@
-\# Prompt:
+# Prompt:
 
 What time-based questions would be difficult to answer with my current schema? How could we modify it to better support temporal analysis?
 
-\# Claude:
+# Claude:
 
 Good question to ask before the data exists — temporal design flaws are cheap to fix now and expensive after you've loaded a few million claims.
 
