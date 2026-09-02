@@ -1,4 +1,4 @@
-# Prompt:
+**Prompt:**
 
 What time-based questions would be difficult to answer with my current schema? How could we modify it to better support temporal analysis?
 
