@@ -44,11 +44,11 @@ Good question to ask before the data exists — temporal design flaws are cheap 
 
 - **Monthly `ACCUMULATOR\\\_SNAPSHOT`** — balances per member per period-end, so burndown curves don't re-sum contribution history.
 
-### Prompt ###
+### Prompt: ###
 
 Can you summarize these findings?
 
-### Claude ###
+### Claude: ###
 
 **What's genuinely hard**
 
