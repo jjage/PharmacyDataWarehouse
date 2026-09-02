@@ -106,7 +106,7 @@ One thing I can start on immediately while you find the file: `DATE\\\_DIM` is f
 
 ### Prompt: ###
 
-**Note: ** Original DDL created from the Flipped-Interaction session uploaded to Claude at the prompt
+**Note:** Original DDL created from the Flipped-Interaction session uploaded to Claude at the prompt
 
 ### Claude: ###
 
