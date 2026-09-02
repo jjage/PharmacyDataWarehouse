@@ -15,7 +15,7 @@ The next step in the evolution of the database is to use Claude to find to areas
 
 [Dr. Jules White's](https://www.linkedin.com/in/jules-white-5717655/) Coursera course Generative AI Database Design & Management with ChatGPT (Vanderbilt) pairs two techniques beautifully: the Flipped Interaction pattern, which was used to create the original schema as described above, and GAPS — Generative AI-Powered Schema Analysis — for stress-testing it.
 
-After uploading the DDL created by Claude to create the database,  the first GAPS prompt was issued:
+After uploading the DDL created by Claude to generate the database,  the first GAPS prompt was issued:
 “What time-based questions would be difficult to answer with my current schema? How could we modify it to better support temporal analysis?”
 
 The results of this prompt are here: [Gaps Analysis Time-Based Questions](GAPS_Analysis_Time_Based_Questions.md)
