@@ -78,7 +78,7 @@ Yes — with one important split baked into how I'd do it.
 
 **What's pure DDL I can implement now**
 
-`DATE\\\_DIM`, the `daterange` conversion with GiST/exclusion constraints, `CLAIM` partitioning, and the additive columns (`KNOWN\\\_FROM`/`KNOWN\\\_TO`, the adjudication-snapshot fields) are all schema changes I can write cleanly. Since no data is loaded yet, I'd implement these by **rewriting the affected `CREATE TABLE` statements in your source DDL**, not as `ALTER`s against a live database — much cleaner, no migration risk, and the exclusion constraints and partition keys go in from the start. The new derived tables (`MEMBER\\\_MONTH`, `THERAPY\\\_EPISODE`, `ACCUMULATOR\\\_SNAPSHOT`) I can also stand up as empty structures now.
+`DATE_DIM`, the `daterange` conversion with GiST/exclusion constraints, `CLAIM` partitioning, and the additive columns (`KNOWN_FROM`/`KNOWN_TO`, the adjudication-snapshot fields) are all schema changes I can write cleanly. Since no data is loaded yet, I'd implement these by **rewriting the affected `CREATE TABLE` statements in your source DDL**, not as `ALTER`s against a live database — much cleaner, no migration risk, and the exclusion constraints and partition keys go in from the start. The new derived tables (`MEMBER_MONTH`, `THERAPY_EPISODE`, `ACCUMULATOR_SNAPSHOT`) I can also stand up as empty structures now.
 
 **What's coupled to the claims generator (not DDL)**
 
@@ -94,15 +94,15 @@ Here's why the sequence matters: the bitemporal columns and the adjudication sna
 
 3. **Four decisions — I have defaults, just correct me where you disagree:**
 
-   - Date span for `DATE\\\_DIM` and `CLAIM` partitions → default **2024–2027**.
+   - Date span for `DATE_DIM` and `CLAIM` partitions → default **2024–2027**.
 
    - `CLAIM` partition granularity → **monthly** (recommended over yearly; better pruning, still cheap at your volumes).
 
    - `daterange` approach → **keep the existing effective/expiration columns and add a generated `daterange` column** beside them, rather than replacing. Keeps the ERD readable and existing predicates valid while giving you indexable containment joins.
 
-   - Adjudication snapshot → **columns on `CLAIM`/`CLAIM\\\_COST`** (recommended) vs. a separate 1:1 snapshot table. On-claim is simpler and the values are already claim-grain.
+   - Adjudication snapshot → **columns on `CLAIM`/`CLAIM_COST`** (recommended) vs. a separate 1:1 snapshot table. On-claim is simpler and the values are already claim-grain.
 
-One thing I can start on immediately while you find the file: `DATE\\\_DIM` is fully standalone and depends on none of the above except the date span. Say the word and I'll write it now, then fold in the rest once the DDL's in front of me. Want me to kick that off, or hold until you've uploaded the schema so it's one coherent pass?
+One thing I can start on immediately while you find the file: `DATE_DIM` is fully standalone and depends on none of the above except the date span. Say the word and I'll write it now, then fold in the rest once the DDL's in front of me. Want me to kick that off, or hold until you've uploaded the schema so it's one coherent pass?
 
 ### Prompt: ###
 
@@ -114,13 +114,13 @@ Got it — reading the DDL now so I'm working from the real thing rather than re
 
 Read the uploaded pharma claims DDL to work from exact definitions
 
-The DDL is real and well-built — 18 tables, 13 ENUMs, `btree\\\_gist` already enabled (which the daterange work needs), and effective/expiration versioning throughout. Let me read the middle section I haven't seen yet so I modify exact definitions.
+The DDL is real and well-built — 18 tables, 13 ENUMs, `btree_gist` already enabled (which the daterange work needs), and effective/expiration versioning throughout. Let me read the middle section I haven't seen yet so I modify exact definitions.
 
 Viewed 4 files
 
 That's the whole schema in view now — and reading it changed one of my recommendations, which I'll flag up front rather than bury.
 
-**One recommendation I'm reversing: don't partition `CLAIM`.** In the abstract, partitioning by `fill\\\_date` is the textbook move. But your actual DDL has `claim\\\_id` referenced by four foreign keys — `CLAIM\\\_COST`, both sides of `CLAIM\\\_ADJUSTMENT`, `ACCUMULATOR\\\_CONTRIBUTION`, plus `CLAIM.original\\\_claim\\\_id` self-referencing. In Postgres 13 a partitioned table's unique/primary key *must include the partition key*, so `claim\\\_id` alone could no longer be a unique target — every one of those FKs would have to become composite `(claim\\\_id, fill\\\_date)`, forcing `fill\\\_date` onto four other tables. That's a lot of structural blast radius for synthetic data that'll likely sit in the thousands-to-low-millions range. Instead I'm giving you a **BRIN index on `fill\\\_date`**, which delivers most of the range-scan pruning benefit at near-zero cost and no ripple. If `CLAIM` ever crosses ~10M rows, partitioning becomes its own migration with the composite-key rework — worth doing then, not now.
+**One recommendation I'm reversing: don't partition `CLAIM`.** In the abstract, partitioning by `fill_date` is the textbook move. But your actual DDL has `claim_id` referenced by four foreign keys — `CLAIM_COST`, both sides of `CLAIM_ADJUSTMENT`, `ACCUMULATOR_CONTRIBUTION`, plus `CLAIM.original_claim_id` self-referencing. In Postgres 13 a partitioned table's unique/primary key *must include the partition key*, so `claim_id` alone could no longer be a unique target — every one of those FKs would have to become composite `(claim_id, fill_date)`, forcing `fill_date` onto four other tables. That's a lot of structural blast radius for synthetic data that'll likely sit in the thousands-to-low-millions range. Instead I'm giving you a **BRIN index on `fill_date`**, which delivers most of the range-scan pruning benefit at near-zero cost and no ripple. If `CLAIM` ever crosses ~10M rows, partitioning becomes its own migration with the composite-key rework — worth doing then, not now.
 
 Everything else I implemented as an **additive companion migration** rather than editing your base DDL. Your original file is clean and I'd rather not surgically rewrite eighteen `CREATE TABLE`s; a separate script that runs after it is safer, reviewable, and non-destructive to the seed data you've already loaded. Let me write it, then I'll actually stand up Postgres in the container and run base DDL + migration + your seed files end-to-end to prove it composes.
 
@@ -134,9 +134,9 @@ The `db.psql` wrapper masked per-statement errors (psql continues on error), so 
 
 Ran a command
 
-`pgserver` ships a minimal Postgres 16.2 with no contrib, so no `btree\\\_gist`. That extension is essential for the exclusion constraints. Let me get a full Postgres with contrib via apt — the earlier failure was a stale security-pocket index, so I'll refresh from the archive pool and retry.
+`pgserver` ships a minimal Postgres 16.2 with no contrib, so no `btree_gist`. That extension is essential for the exclusion constraints. Let me get a full Postgres with contrib via apt — the earlier failure was a stale security-pocket index, so I'll refresh from the archive pool and retry.
 
-Full Postgres 16 with `btree\\\_gist` and `pgcrypto` is in. But under strict error-checking the base DDL will abort on a real bug I need to flag: at line 551, `CREATE TABLE formulary\\\_drug` defines `chk\\\_tier\\\_in\\\_formulary` as an inline `CHECK` containing a **subquery** — which Postgres prohibits. The DDL even acknowledges this later (line 1265) and replaces it with a trigger, but the illegal constraint is still in the `CREATE TABLE`, so the table never gets created. I'll make a corrected copy for validation and report it.
+Full Postgres 16 with `btree_gist` and `pgcrypto` is in. But under strict error-checking the base DDL will abort on a real bug I need to flag: at line 551, `CREATE TABLE formulary\\\_drug` defines `chk\\\_tier\\\_in\\\_formulary` as an inline `CHECK` containing a **subquery** — which Postgres prohibits. The DDL even acknowledges this later (line 1265) and replaces it with a trigger, but the illegal constraint is still in the `CREATE TABLE`, so the table never gets created. I'll make a corrected copy for validation and report it.
 
 Ran 5 commands · 2 notes
 
