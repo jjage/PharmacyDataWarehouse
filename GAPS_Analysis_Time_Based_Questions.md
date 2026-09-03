@@ -14,35 +14,35 @@ Good question to ask before the data exists — temporal design flaws are cheap 
 
 *3. No date dimension.* Rolling 12-month windows, month-end boundaries, plan-year vs calendar-year alignment, and weekday effects (fill volume drops hard on weekends — trend lines look noisy without a weekday flag) all get hand-rolled per query. This is the cheapest missing piece with the widest blast radius.
 
-*4. No exposure denominator.* Every rate over time — PMPM, utilization per 1,000, "% of members adherent" — needs eligible member-months derived from `MEMBER\\\_ENROLLMENT` spans on the fly. Continuous-enrollment criteria with allowable gaps (which Star and HEDIS measures require) are genuinely subtle to compute from spans: mid-month starts, disenroll/re-enroll churn, partial years. This is where wrong answers come from, not just slow ones.
+*4. No exposure denominator.* Every rate over time — PMPM, utilization per 1,000, "% of members adherent" — needs eligible member-months derived from `MEMBER_ENROLLMENT` spans on the fly. Continuous-enrollment criteria with allowable gaps (which Star and HEDIS measures require) are genuinely subtle to compute from spans: mid-month starts, disenroll/re-enroll churn, partial years. This is where wrong answers come from, not just slow ones.
 
-*5. Cohort-relative time.* "PDC in the first 90 days after initiation," "time to discontinuation," "new starts vs continuing users" all need an index date per member per therapy. `IS\\\_NEW\\\_PRESCRIPTION` / `REFILL\\\_NUMBER = 0` looks like it solves this but doesn't — a member switching atorvastatin → rosuvastatin gets a fresh `REFILL\\\_NUMBER = 0` while clinically continuing the same therapy. True new-start detection needs a look-back window against the *therapeutic group*, recomputed every run.
+*5. Cohort-relative time.* "PDC in the first 90 days after initiation," "time to discontinuation," "new starts vs continuing users" all need an index date per member per therapy. `IS_NEW_PRESCRIPTION` / `REFILL_NUMBER = 0` looks like it solves this but doesn't — a member switching atorvastatin → rosuvastatin gets a fresh `REFILL_NUMBER = 0` while clinically continuing the same therapy. True new-start detection needs a look-back window against the *therapeutic group*, recomputed every run.
 
-*6. Interval-shaped facts stored as points.* A claim is a point event (`FILL\\\_DATE`) representing an interval of coverage. `DAYS\\\_SUPPLY\\\_END\\\_DATE` being stored is a real win, but "how many members were covered on drug X on any given day," gap analysis, and early-refill stockpiling adjustment all require expanding intervals to days at query time.
+*6. Interval-shaped facts stored as points.* A claim is a point event (`FILL_DATE`) representing an interval of coverage. `DAYS_SUPPLY_END_DATE` being stored is a real win, but "how many members were covered on drug X on any given day," gap analysis, and early-refill stockpiling adjustment all require expanding intervals to days at query time.
 
-*7. Range joins that can't use indexes.* `MEMBER\\\_DIM`, `FORMULARY`, `FORMULARY\\\_DRUG`, `PDC\\\_NDC\\\_GROUP\\\_MAP`, and `DRUG\\\_REFERENCE` all use effective/expiration pairs with NULL meaning open-ended. Every point-in-time predicate needs `COALESCE(expiration\\\_date, '9999-12-31')`, which defeats the B-tree index and forces scans.
+*7. Range joins that can't use indexes.* `MEMBER_DIM`, `FORMULARY`, `FORMULARY_DRUG`, `PDC_NDC_GROUP_MAP`, and `DRUG_REFERENCE` all use effective/expiration pairs with NULL meaning open-ended. Every point-in-time predicate needs `COALESCE(expiration_date, '9999-12-31')`, which defeats the B-tree index and forces scans.
 
 **Modifications, roughly by cost**
 
 *Cheap, do before loading data:*
 
-- **`DATE\\\_DIM`** — calendar date, month/quarter/year, plan year, fiscal period, weekday, holiday flag, month-end flag. A few hundred rows, fixes item 3 entirely.
+- **`DATE_DIM`** — calendar date, month/quarter/year, plan year, fiscal period, weekday, holiday flag, month-end flag. A few hundred rows, fixes item 3 entirely.
 
 - **Convert effective/expiration pairs to `daterange` with GiST indexes**, using `'infinity'` instead of NULL. This makes containment joins (`@\\\>`) indexable *and* lets you add exclusion constraints that enforce non-overlapping SCD2 spans declaratively — replacing trigger logic you'd otherwise maintain by hand.
 
-- **Partition `CLAIM` by `FILL\\\_DATE`** (monthly or yearly range partitions) and add a BRIN index on `FILL\\\_DATE`. Postgres 13 handles this well, and it's painful to retrofit later.
+- **Partition `CLAIM` by `FILL_DATE`** (monthly or yearly range partitions) and add a BRIN index on `FILL_DATE`. Postgres 13 handles this well, and it's painful to retrofit later.
 
-- **Add `KNOWN\\\_FROM` / `KNOWN\\\_TO` timestamps to `CLAIM` and `CLAIM\\\_COST`**, populated at load. This is the bitemporal fix — it turns as-of restatement from a windowed reconstruction into a simple `WHERE :as\\\_of BETWEEN known\\\_from AND known\\\_to`.
+- **Add `KNOWN_FROM` / `KNOWN_TO` timestamps to `CLAIM` and `CLAIM_COST`**, populated at load. This is the bitemporal fix — it turns as-of restatement from a windowed reconstruction into a simple `WHERE :as_of BETWEEN known_from AND known_to`.
 
 *Structural, high payoff:*
 
-- **`MEMBER\\\_MONTH` fact** (member × month × plan, with eligibility and continuous-enrollment flags). Probably the single highest-value addition for time-series work — it solves denominators, churn, and cohort qualification in one table.
+- **`MEMBER_MONTH` fact** (member × month × plan, with eligibility and continuous-enrollment flags). Probably the single highest-value addition for time-series work — it solves denominators, churn, and cohort qualification in one table.
 
 - **Materialize the adjudication snapshot on the claim** — resolved tier, benefit phase, and running deductible/OOP balance as of that fill. Your stateful generator computes all three anyway; writing them costs nothing and converts population-scale phase questions from per-member running sums into plain filters.
 
-- **`THERAPY\\\_EPISODE`** (member, therapeutic group, index date, end date, episode sequence, discontinuation flag). Fixes item 5, and makes persistence and time-to-event analysis trivial.
+- **`THERAPY_EPISODE`** (member, therapeutic group, index date, end date, episode sequence, discontinuation flag). Fixes item 5, and makes persistence and time-to-event analysis trivial.
 
-- **Monthly `ACCUMULATOR\\\_SNAPSHOT`** — balances per member per period-end, so burndown curves don't re-sum contribution history.
+- **Monthly `ACCUMULATOR_SNAPSHOT`** — balances per member per period-end, so burndown curves don't re-sum contribution history.
 
 ### Prompt: ###
 
@@ -54,17 +54,17 @@ Can you summarize these findings?
 
 Seven gaps, which fall into three groups:
 
-*Time isn't materialized where it should be.* As-of restatement is derivable from `PROCESSED\\\_DATE` plus the version chain, but only via a window function per query — so nobody runs it and financials silently restate. Benefit phase and running balances have the same problem.
+*Time isn't materialized where it should be.* As-of restatement is derivable from `PROCESSED_DATE` plus the version chain, but only via a window function per query — so nobody runs it and financials silently restate. Benefit phase and running balances have the same problem.
 
 *Time can't be counted.* There's no date dimension (so rolling windows, plan-year alignment, and weekday effects are hand-rolled) and no member-month exposure fact (so every rate — PMPM, utilization per 1,000, adherence % — derives its denominator from enrollment spans on the fly, which is where wrong answers come from, not just slow ones).
 
-*Time is stored in shapes that resist querying.* Claims are point events representing coverage intervals, so day-level coverage and gap analysis require expansion at runtime. Effective/expiration pairs using NULL for open-ended force `COALESCE` predicates that defeat indexes. And cohort-relative time (new-start vs continuing) can't lean on `REFILL\\\_NUMBER = 0`, since a within-class drug switch looks like a new start but isn't.
+*Time is stored in shapes that resist querying.* Claims are point events representing coverage intervals, so day-level coverage and gap analysis require expansion at runtime. Effective/expiration pairs using NULL for open-ended force `COALESCE` predicates that defeat indexes. And cohort-relative time (new-start vs continuing) can't lean on `REFILL_NUMBER = 0`, since a within-class drug switch looks like a new start but isn't.
 
 **The fixes**
 
-Four are cheap and belong *before* data loads: a `DATE\\\_DIM`; converting effective/expiration pairs to `daterange` with GiST indexes and exclusion constraints; partitioning `CLAIM` by `FILL\\\_DATE`; and adding `KNOWN\\\_FROM`/`KNOWN\\\_TO` for true bitemporality.
+Four are cheap and belong *before* data loads: a `DATE_DIM`; converting effective/expiration pairs to `daterange` with GiST indexes and exclusion constraints; partitioning `CLAIM` by `FILL_DATE`; and adding `KNOWN_FROM`/`KNOWN_TO` for true bitemporality.
 
-Three are structural but high-payoff: a `MEMBER\\\_MONTH` fact (the single biggest win for time-series), materializing the adjudication snapshot on each claim (tier, phase, balances — which your generator computes anyway, so storing it is nearly free), and a `THERAPY\\\_EPISODE` table.
+Three are structural but high-payoff: a `MEMBER_MONTH` fact (the single biggest win for time-series), materializing the adjudication snapshot on each claim (tier, phase, balances — which your generator computes anyway, so storing it is nearly free), and a `THERAPY_EPISODE` table.
 
 Want this shaped into something else — a design memo, a follow-up post, or a prioritized backlog with effort estimates?
 
