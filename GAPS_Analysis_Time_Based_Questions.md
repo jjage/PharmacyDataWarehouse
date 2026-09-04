@@ -136,15 +136,15 @@ Ran a command
 
 `pgserver` ships a minimal Postgres 16.2 with no contrib, so no `btree_gist`. That extension is essential for the exclusion constraints. Let me get a full Postgres with contrib via apt — the earlier failure was a stale security-pocket index, so I'll refresh from the archive pool and retry.
 
-Full Postgres 16 with `btree_gist` and `pgcrypto` is in. But under strict error-checking the base DDL will abort on a real bug I need to flag: at line 551, `CREATE TABLE formulary\\\_drug` defines `chk\\\_tier\\\_in\\\_formulary` as an inline `CHECK` containing a **subquery** — which Postgres prohibits. The DDL even acknowledges this later (line 1265) and replaces it with a trigger, but the illegal constraint is still in the `CREATE TABLE`, so the table never gets created. I'll make a corrected copy for validation and report it.
+Full Postgres 16 with `btree_gist` and `pgcrypto` is in. But under strict error-checking the base DDL will abort on a real bug I need to flag: at line 551, `CREATE TABLE formulary_drug` defines `chk_tier_in_formulary` as an inline `CHECK` containing a **subquery** — which Postgres prohibits. The DDL even acknowledges this later (line 1265) and replaces it with a trigger, but the illegal constraint is still in the `CREATE TABLE`, so the table never gets created. I'll make a corrected copy for validation and report it.
 
 Ran 5 commands · 2 notes
 
-T1 passed perfectly (1461 dates, 48 month-ends, 416 weekend days). But T2 surfaced a **second latent bug in the base DDL** — and this one's subtle. The SCD2 trigger `trg\\\_member\\\_dim\\\_scd2` is defined as `AFTER INSERT`, but the partial unique index `uix\\\_member\\\_dim\\\_current` is checked *immediately* at insert time. So the second member version collides with the still-current first version before the AFTER trigger can expire it. As written, you can never insert a second version of any member. The fix is `BEFORE INSERT` (the expiration then lands before the uniqueness check). Let me fold that fix in and rebuild clean.
+T1 passed perfectly (1461 dates, 48 month-ends, 416 weekend days). But T2 surfaced a **second latent bug in the base DDL** — and this one's subtle. The SCD2 trigger `trg_member_dim_scd2` is defined as `AFTER INSERT`, but the partial unique index `uix_member_dim_current` is checked *immediately* at insert time. So the second member version collides with the still-current first version before the AFTER trigger can expire it. As written, you can never insert a second version of any member. The fix is `BEFORE INSERT` (the expiration then lands before the uniqueness check). Let me fold that fix in and rebuild clean.
 
 Ran 2 commands
 
-T2 and T3 now pass cleanly — SCD2 versioning works, ranges canonicalize correctly to non-overlapping `\\\[2026-01-01,2026-06-01)` and `\\\[2026-06-01,)`, and the point-in-time helper returns the right version. T4 hit an ambiguous-column error in my *test query* (both tables have `known\\\_from`), not a schema problem. Fixing the test and running once more on a clean rebuild.
+T2 and T3 now pass cleanly — SCD2 versioning works, ranges canonicalize correctly to non-overlapping `\\\[2026-01-01,2026-06-01)` and `\\\[2026-06-01,)`, and the point-in-time helper returns the right version. T4 hit an ambiguous-column error in my *test query* (both tables have `known_from`), not a schema problem. Fixing the test and running once more on a clean rebuild.
 
 Ran 4 commands, read a file · 3 notes
 
