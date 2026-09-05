@@ -144,7 +144,7 @@ T1 passed perfectly (1461 dates, 48 month-ends, 416 weekend days). But T2 surfac
 
 Ran 2 commands
 
-T2 and T3 now pass cleanly — SCD2 versioning works, ranges canonicalize correctly to non-overlapping `\\\[2026-01-01,2026-06-01)` and `\\\[2026-06-01,)`, and the point-in-time helper returns the right version. T4 hit an ambiguous-column error in my *test query* (both tables have `known_from`), not a schema problem. Fixing the test and running once more on a clean rebuild.
+T2 and T3 now pass cleanly — SCD2 versioning works, ranges canonicalize correctly to non-overlapping `[2026-01-01,2026-06-01)` and `[2026-06-01,)`, and the point-in-time helper returns the right version. T4 hit an ambiguous-column error in my *test query* (both tables have `known_from`), not a schema problem. Fixing the test and running once more on a clean rebuild.
 
 Ran 4 commands, read a file · 3 notes
 
