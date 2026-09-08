@@ -18,7 +18,8 @@ The next step in the evolution of the database is to use Claude to find to areas
 After uploading the DDL created by Claude to generate the database, the first GAPS prompt was issued:
 “What time-based questions would be difficult to answer with my current schema? How could we modify it to better support temporal analysis?”
 
-The results of this prompt are here: [Gaps Analysis Time-Based Questions](GAPS_Analysis_Time_Based_Questions.md)
+Prompt results are here: [Gaps Analysis Time-Based Questions](GAPS_Analysis_Time_Based_Questions.md)
 
 The second prompt using GAPS analysis to stress-test and improve the database design is: "What questions about relationships between entities would be difficult to answer? How could we better capture these connections?"
 
+Prompt Results are here: 
