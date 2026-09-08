@@ -22,4 +22,6 @@ Prompt results are here: [Gaps Analysis Time-Based Questions](GAPS_Analysis_Time
 
 The second prompt using GAPS analysis to stress-test and improve the database design is: "What questions about relationships between entities would be difficult to answer? How could we better capture these connections?"
 
-Prompt Results are here: 
+Prompt Results are here: [GAPS Analysis Entity Relationships](GAPS_Analysis_Entity_Relationships.md)
+
+
