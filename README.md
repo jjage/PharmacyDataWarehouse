@@ -20,5 +20,5 @@ After uploading the DDL created by Claude to generate the database, the first GA
 
 The results of this prompt are here: [Gaps Analysis Time-Based Questions](GAPS_Analysis_Time_Based_Questions.md)
 
-The second prompt using GAPS analysis to stress-test and improve the database design was as follows: "What questions about relationships between entities would be difficult to answer? How could we better capture these connections?"
+The second prompt using GAPS analysis to stress-test and improve the database design is: "What questions about relationships between entities would be difficult to answer? How could we better capture these connections?"
 
