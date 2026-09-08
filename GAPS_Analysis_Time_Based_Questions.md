@@ -168,3 +168,5 @@ One thing worth naming: several of these structures — `MEMBER_MONTH`, `THERAPY
 
 The Pharmaceutical Claims Temporal Update DDL is here: [Pharmaceutical Claims Temporal Update](pharma_claims_temporal_upgrade_Run_2nd.sql)
 
+Note: The DLL updates in pharma_claims_ddl_fixed.sql are incorporated into the file: pharma_claims_DDL_Run_1st.sql
+
