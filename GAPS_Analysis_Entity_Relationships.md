@@ -1,10 +1,10 @@
-###Prompt###
+### Prompt ###
 
 
 What questions about relationships between entities would be difficult to answer? How could we better capture these connections?
 
 
-###Claude###
+### Claude ###
 
 
 Good line of investigation — the last two reviews were about *what's stored* and *when*; this one is about the *edges* of the graph, and it exposes a different class of weakness. I have the full FK structure in front of me now, so this is grounded in your actual schema rather than generalities.
@@ -38,13 +38,13 @@ If I had to rank: the `MEMBER` anchor table is the one that pays back across the
 Want me to draft the DDL for the `MEMBER` anchor refactor (it's the most invasive, since it touches `member\_dim` and every `member\_id` column, so worth designing carefully), or render an ERD showing these missing and soft edges so you can see the relationship gaps against the current graph?
 
 
-###Prompt:###
+### Prompt: ###
 
 
 I want to focus on this suggested change because I think it identifies a real weakness in hte data model: There is no person-level entity — `member\_id` is a soft link everywhere.
 
 
-###Claude:###
+### Claude: ###
 
 
 This is the right one to focus on — it's the change that fixes referential integrity on every person-level relationship at once, and it happens to be low-risk right now for a specific reason: your `member\_id` values already exist in every table, so giving them a parent to point at requires no data rewiring. And since you haven't generated member/claim data yet, restructuring `member\_dim` is essentially free.
