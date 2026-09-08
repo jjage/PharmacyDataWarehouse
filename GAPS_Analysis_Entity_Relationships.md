@@ -83,7 +83,7 @@ And `member\_dim` no longer carries `date\_of\_birth` — DOB is written once to
 
 One relationship gap from the review this refactor deliberately doesn't touch: `member\_enrollment` still has no non-overlap exclusion, so a person can hold two overlapping enrollment spans. That's the same class of fix as the SCD2 exclusions we added earlier and would be a natural companion. Want me to fold that enrollment exclusion in, or move on to the claims generator now that the person hub gives it a clean anchor to build against?
 
-[Pharm Claims](pharma_claims_member_anchor_upgrade_Run_3rd.sql)
+[Pharmaceutical Claims - Member Anchor Upgrade](pharma_claims_member_anchor_upgrade_Run_3rd.sql)
 
 
 
