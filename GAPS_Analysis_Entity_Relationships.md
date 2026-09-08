@@ -1,4 +1,4 @@
-*** Prompt ***
+***Prompt***
 
 
 What questions about relationships between entities would be difficult to answer? How could we better capture these connections?
