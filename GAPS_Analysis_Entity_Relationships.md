@@ -47,13 +47,13 @@ I want to focus on this suggested change because I think it identifies a real we
 ### Claude: ###
 
 
-This is the right one to focus on — it's the change that fixes referential integrity on every person-level relationship at once, and it happens to be low-risk right now for a specific reason: your `member\_id` values already exist in every table, so giving them a parent to point at requires no data rewiring. And since you haven't generated member/claim data yet, restructuring `member\_dim` is essentially free.
+This is the right one to focus on — it's the change that fixes referential integrity on every person-level relationship at once, and it happens to be low-risk right now for a specific reason: your `member_id` values already exist in every table, so giving them a parent to point at requires no data rewiring. And since you haven't generated member/claim data yet, restructuring `member_dim` is essentially free.
 
 Let me lay out the design decision, then implement and validate it.
 
-**The design.** `member\_id` becomes the primary key of a new `MEMBER` hub — one row per person. This is what makes the refactor safe: every existing `member\_id` column can FK to it with zero value changes. `MEMBER\_DIM` stays exactly where it is and keeps its name, now functioning as the SCD2 *satellite* of `MEMBER` (versioned demographics hang off the person). The one substantive move: `date\_of\_birth` is immutable, so it belongs on the person hub, not repeated across every version — I relocate it from `member\_dim` to `member`. I also add `date\_of\_death` (nullable), which is a genuine person-level fact and gives you censoring for persistence/adherence analysis. Then seven `member\_id` columns get real foreign keys: `member\_dim`, `member\_enrollment`, `claim`, `prior\_auth`, `accumulator`, `member\_month`, `therapy\_episode`, `accumulator\_snapshot`.
+**The design.** `member_id` becomes the primary key of a new `MEMBER` hub — one row per person. This is what makes the refactor safe: every existing `member_id` column can FK to it with zero value changes. `MEMBER_DIM` stays exactly where it is and keeps its name, now functioning as the SCD2 *satellite* of `MEMBER` (versioned demographics hang off the person). The one substantive move: `date_of_birth` is immutable, so it belongs on the person hub, not repeated across every version — I relocate it from `member_dim` to `member`. I also add `date_of_death` (nullable), which is a genuine person-level fact and gives you censoring for persistence/adherence analysis. Then seven `member_id` columns get real foreign keys: `member_dim`, `member_enrollment`, `claim`, `prior_auth`, `accumulator`, `member_month`, `therapy_episode`, `accumulator_snapshot`.
 
-One bonus fix on-theme: I'll harden the claim validation trigger so `claim.member\_id` must agree with the person behind `claim.member\_sk` — right now those two links could silently disagree.
+One bonus fix on-theme: I'll harden the claim validation trigger so `claim.member_id` must agree with the person behind `claim.member_sk` — right now those two links could silently disagree.
 
 Let me write it against the live test database (which already has `MBR001` with two versions and a claim, so the backfill and FKs get exercised with real data).
 
@@ -63,25 +63,25 @@ All positive tests green — the hub is populated, DOB relocated, all eight pers
 
 Ran a command
 
-Fully validated — the exact weakness you flagged is now closed. The orphaned `prior\_auth.member\_id` that used to be silently accepted is rejected, and so is a claim whose two member links disagree. Copying to outputs.
+Fully validated — the exact weakness you flagged is now closed. The orphaned `prior_auth.member_id` that used to be silently accepted is rejected, and so is a claim whose two member links disagree. Copying to outputs.
 
 Ran a command, read a file
 
 Done and validated end to end against real Postgres, with data in the tables so the backfill and FKs were exercised for real.
 
-**`pharma\_claims\_member\_anchor.sql`** does seven things: creates the `MEMBER` person hub (keyed by `member\_id`, holding the immutable `date\_of\_birth` plus `date\_of\_death` and `member\_since`); backfills it from `member\_dim`; relocates `date\_of\_birth` off the version table onto the hub; adds real foreign keys on all eight person-level `member\_id` columns; recreates `v\_member\_current` sourcing DOB from the hub; and hardens the claim trigger so `member\_id` and `member\_sk` can't disagree about who the person is.
+**`pharma_claims_member_anchor.sql`** does seven things: creates the `MEMBER` person hub (keyed by `member_id`, holding the immutable `date_of_birth` plus `date_of_death` and `member_since`); backfills it from `member_dim`; relocates `date_of_birth` off the version table onto the hub; adds real foreign keys on all eight person-level `member_id` columns; recreates `v_member_current` sourcing DOB from the hub; and hardens the claim trigger so `member_id` and `member_sk` can't disagree about who the person is.
 
-What the tests proved: the hub backfilled correctly (MBR001, DOB and member-since intact), all eight tables now FK to `member`, the view still resolves, and the enforcement bites — an orphaned `prior\_auth.member\_id` (the precise silent-acceptance case you identified), an orphaned `claim.member\_id`, and a claim whose person-key contradicts its version-key are all now rejected. Before this migration, all three were accepted without complaint.
+What the tests proved: the hub backfilled correctly (MBR001, DOB and member-since intact), all eight tables now FK to `member`, the view still resolves, and the enforcement bites — an orphaned `prior_auth.member_id` (the precise silent-acceptance case you identified), an orphaned `claim.member_id`, and a claim whose person-key contradicts its version-key are all now rejected. Before this migration, all three were accepted without complaint.
 
 The run order for your database is: base DDL → temporal upgrade → **member anchor**. It's safe on your current DB whether or not member data exists; on empty tables the backfill is simply a no-op.
 
 Two implications worth holding onto for the generator, since this changes its contract:
 
-The load order is now hub-first. The generator must insert a `MEMBER` row for each person *before* any `member\_dim` version, claim, PA, accumulator, or episode for them — the FKs enforce it. That's the natural Data-Vault hub-then-satellite pattern, and it's a feature: it means the generator has to declare each person as an entity before attaching anything to them.
+The load order is now hub-first. The generator must insert a `MEMBER` row for each person *before* any `member_dim` version, claim, PA, accumulator, or episode for them — the FKs enforce it. That's the natural Data-Vault hub-then-satellite pattern, and it's a feature: it means the generator has to declare each person as an entity before attaching anything to them.
 
-And `member\_dim` no longer carries `date\_of\_birth` — DOB is written once to `MEMBER`, not repeated on every version. So the demographic-version insert drops that column and the person insert picks it up.
+And `member_dim` no longer carries `date_of_birth` — DOB is written once to `MEMBER`, not repeated on every version. So the demographic-version insert drops that column and the person insert picks it up.
 
-One relationship gap from the review this refactor deliberately doesn't touch: `member\_enrollment` still has no non-overlap exclusion, so a person can hold two overlapping enrollment spans. That's the same class of fix as the SCD2 exclusions we added earlier and would be a natural companion. Want me to fold that enrollment exclusion in, or move on to the claims generator now that the person hub gives it a clean anchor to build against?
+One relationship gap from the review this refactor deliberately doesn't touch: `member_enrollment` still has no non-overlap exclusion, so a person can hold two overlapping enrollment spans. That's the same class of fix as the SCD2 exclusions we added earlier and would be a natural companion. Want me to fold that enrollment exclusion in, or move on to the claims generator now that the person hub gives it a clean anchor to build against?
 
 [Pharmaceutical Claims - Member Anchor Upgrade](pharma_claims_member_anchor_upgrade_Run_3rd.sql)
 
