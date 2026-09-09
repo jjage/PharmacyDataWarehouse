@@ -24,4 +24,5 @@ The second prompt using GAPS analysis to stress-test and improve the database de
 
 Prompt Results are here: [GAPS Analysis Entity Relationships](GAPS_Analysis_Entity_Relationships.md)
 
+Entity Relationship diagram is here: [Pharmacy Claims ER Diagram](pharma_claims_erd_v3.png)
 
