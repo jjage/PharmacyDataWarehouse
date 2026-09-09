@@ -26,3 +26,12 @@ Prompt Results are here: [GAPS Analysis Entity Relationships](GAPS_Analysis_Enti
 
 Entity Relationship diagram is here: [Pharmacy Claims ER Diagram](pharma_claims_erd_v3.png)
 
+## Acknowledgments
+
+This project applies techniques from [Dr. Jules White's](https://www.linkedin.com/in/jules-white-5717655/) Coursera course *Generative AI Database Design & Management with ChatGPT* (Vanderbilt). The Flipped Interaction pattern and GAPS methodology are his; the pharmacy claims domain modeling is mine.
+
+## License and Contact
+
+Released under the [Apache 2.0 license](LICENSE) — free to use, modify, and adapt for any purpose, commercial or otherwise. Fork it and make it your own.
+
+Feedback and issues are welcome via GitHub. For consulting engagements — implementation, extension, or adapting the schema to your organization's data — reach me at jjage@arbordataanalytics.com.
